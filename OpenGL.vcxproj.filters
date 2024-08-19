@@ -10,6 +10,7 @@
     <ClCompile Include="source\Texture.cpp" />
     <ClCompile Include="source\World\Chunk.cpp" />
     <ClCompile Include="source\Shader.cpp" />
+    <ClCompile Include="source\World\World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="vertex.glsl" />
@@ -27,6 +28,7 @@
     <ClInclude Include="source\Texture.h" />
     <ClInclude Include="source\World\Chunk.h" />
     <ClInclude Include="source\Shader.h" />
+    <ClInclude Include="source\World\World.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="atlas.png" />

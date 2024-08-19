@@ -38,24 +38,35 @@ public:
 	static const int chunkSize = 16;
 	Chunk(int chunkX, int chunkZ) : chunkX(chunkX), chunkZ(chunkZ) {
 	}
+
 	~Chunk() {
 		delete mesh;
 	}
 	const Block& getBlock(int x, int y, int z) const;
 	void setBlock(int x, int y, int z, Block& block);
-	void GenerateChunk(std::ofstream& image);
+	void GenerateChunk();
 	void genBuffers();
+
+	bool Generated() {
+		return chunkGenerated;
+	}
+	bool ReadyForBuffers() {
+		return meshGenerated && chunkGenerated && !buffersReady;
+	}
+	bool Ready() {
+		return meshGenerated && chunkGenerated && buffersReady;
+	}
+
 	glm::ivec3 getBlockPos() {
 		return glm::ivec3(chunkX * chunkSize, 0, chunkZ * chunkSize);
 	}
+
 	ChunkMesh* getMesh() {
 		if (!chunkGenerated) {
-			//GenerateChunk();
-			chunkGenerated = true;
+			GenerateChunk();
 		}
 		if (!meshGenerated) {
 			mesh = new ChunkMesh(generateChunkMesh(*this));
-			meshGenerated = true;
 		}
 		return mesh;
 	}
@@ -65,6 +76,7 @@ private:
 	Block blocks[chunkSize][chunkSize][chunkSize];
 	bool meshGenerated = false;
 	bool chunkGenerated = false;
+	bool buffersReady = false;
 	ChunkMesh* mesh = nullptr;
 	ChunkMesh generateChunkMesh(Chunk& chunk);
 };

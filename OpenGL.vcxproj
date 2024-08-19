@@ -28,6 +28,7 @@
     <ClCompile Include="include\OpenGL\src\glad.c" />
     <ClCompile Include="source\Shader.cpp" />
     <ClCompile Include="source\Texture.cpp" />
+    <ClCompile Include="source\World\World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitattributes" />
@@ -49,6 +50,7 @@
     <ClInclude Include="source\main.hpp" />
     <ClInclude Include="source\Shader.h" />
     <ClInclude Include="source\Texture.h" />
+    <ClInclude Include="source\World\World.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="atlas.png">

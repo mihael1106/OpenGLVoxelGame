@@ -168,22 +168,19 @@ ChunkMesh Chunk::generateChunkMesh(Chunk& chunk) {
 		}
 	}
 
+	meshGenerated = true;
 	return ChunkMesh(vertices, indices, transparentVertices, transparentIndices);
 }
 
-void Chunk::GenerateChunk(std::ofstream& image) {
+void Chunk::GenerateChunk() {
 	glm::ivec3 blockPos = getBlockPos();
 	for (int x = 0; x < chunkSize; x++) {
 		for (int z = 0; z < chunkSize; z++) {
 			int worldX = blockPos.x + x;
 			int worldZ = blockPos.z + z;
 
-			float upTo = glm::perlin(glm::vec2((float)worldX / 16, (float)worldZ / 16)) * 128 + 128;
+			float upTo = glm::perlin(glm::vec2((float)worldX / 16, (float)worldZ / 16)) * 8 + 8;
 
-			std::string write = std::to_string(worldX) + " " + std::to_string(worldZ) + " " + std::to_string(upTo) + "\n"; //for noise image
-			image.write(write.data(), write.length() * sizeof(char)); //for noise image
-
-			upTo /= 16.0f;
 			for (int y = upTo; y >= 0; y--) {
 				int difference = (int)upTo - y - 1;
 				if (difference == 0) {
@@ -205,6 +202,9 @@ void Chunk::GenerateChunk(std::ofstream& image) {
 }
 
 void Chunk::genBuffers() {
+	if (mesh == nullptr) {
+		return;
+	}
 	glGenVertexArrays(1, &mesh->normalVAO);
 	glBindVertexArray(mesh->normalVAO);
 
@@ -242,4 +242,5 @@ void Chunk::genBuffers() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 5, (void*)(sizeof(GL_FLOAT) * 3));
 
 	glBindVertexArray(0);
+	buffersReady = true;
 }

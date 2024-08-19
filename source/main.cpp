@@ -20,13 +20,15 @@
 #include "Camera.h"
 #include "Input.h"
 #include "Texture.h"
-#include "World/Chunk.h"
+#include "World/World.h"
 #include "Shader.h"
 
 SDL_GLContext sdlGLContext = nullptr;
 SDL_GameController* controller = NULL;
 
 bool quit = false;
+
+World* world;
 
 Camera camera;
 float sensitivity = 0.5f;
@@ -196,10 +198,6 @@ static void DrawChunk(Chunk* chunk) {
 	glDepthMask(GL_TRUE);
 }
 
-Chunk* chunk;
-Chunk* chunk2;
-Chunk* chunk3;
-Chunk* chunk4;
 static void Draw() {
 	glUseProgram(shaderProgram);
 	glEnable(GL_CULL_FACE);
@@ -207,34 +205,41 @@ static void Draw() {
 	glViewport(0, 0, windowWidth, windowHeight);
 	glClearColor(0.4f, 0.6f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	DrawChunk(chunk);
-	DrawChunk(chunk2);
-	DrawChunk(chunk3);
-	DrawChunk(chunk4);
+	for (int x = 0; x < 128; x++) {
+		for (int y = 0; y < 128; y++) {
+			Chunk* chunk = world->getChunk(x, y);
+			if (chunk == nullptr) {
+				continue;
+			}
+			if (chunk->ReadyForBuffers()) {
+				chunk->genBuffers();
+			}
+			if (chunk->Ready()) {
+				DrawChunk(chunk);
+			}
+		}
+	}
 	glBindVertexArray(0);
 
 	glUniformMatrix4fv(viewMatrix, 1, GL_FALSE, &camera.getViewMatrix()[0][0]);
 
-	glm::mat4 project = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 1000.0f);
+	glm::mat4 project = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 3000.0f);
 	glUniformMatrix4fv(projectionMatrix, 1, GL_FALSE, &project[0][0]);
-	glBindVertexArray(0);
-
 }
 
 static void CreateBuffers() {
 	long long beofre = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-	ChunkMesh* mesh = chunk->getMesh();
-	ChunkMesh* mesh2 = chunk2->getMesh();
-	ChunkMesh* mesh3 = chunk3->getMesh();
-	ChunkMesh* mesh4 = chunk4->getMesh();
+	for (int x = 0; x < 128; x++) {
+		for (int y = 0; y < 128; y++) {
+			if (quit) {
+				return;
+			}
+			world->getChunk(x, y)->getMesh();
+		}
+	}
+	std::cout << world->getBlock(24, 3, 290).getAtlasPos(BlockFace::TOP).y << std::endl;
 	long long after = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-
-	std::cout << (after - beofre) / 1000000.0f << "ms" << std::endl;
-
-	chunk->genBuffers();
-	chunk2->genBuffers();
-	chunk3->genBuffers();
-	chunk4->genBuffers();
+	std::cout << "Took: " << (after - beofre) / 1000000.0f << "ms" << std::endl;
 }
 
 static void SetupController();
@@ -345,27 +350,10 @@ int main(int argc, char* argv[]) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	std::ofstream image("height.txt");
+	world = new World();
 
-	std::string size = std::to_string(Chunk::chunkSize * 2);;
-	char newLine[1] = { '\n' };
-	char space[1] = { ' ' };
-	image.write(size.data(), size.size());
-	image.write(space, 1);
-	image.write(size.data(), size.size());
-	image.write(newLine, sizeof(newLine));
-
-	chunk = new Chunk(0, 0);
-	chunk2 = new Chunk(1, 0);
-	chunk3 = new Chunk(0, 1);
-	chunk4 = new Chunk(1, 1);
-	chunk->GenerateChunk(image);
-	chunk2->GenerateChunk(image);
-	chunk3->GenerateChunk(image);
-	chunk4->GenerateChunk(image);
-	//vertex specification
-	CreateBuffers();
-	image.close();
+	std::thread worldCreator(CreateBuffers);
+	//CreateBuffers();
 
 	//create graphics pipeline
 	shaderProgram = CreateShaderProgram("vertex.glsl", "fragment.glsl");
@@ -403,10 +391,8 @@ int main(int argc, char* argv[]) {
 	}
 	//cleanup
 	SDL_SetRelativeMouseMode(SDL_FALSE);
-	delete chunk;
-	delete chunk2;
-	delete chunk3;
-	delete chunk4;
+	worldCreator.join();
+	delete world;
 
 	CloseConsole();
 	SDL_DestroyWindow(sdlWindow);
